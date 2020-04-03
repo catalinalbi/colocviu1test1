@@ -2,8 +2,12 @@ package ro.pub.cs.systems.eim.practicaltest01;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.app.Service;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
@@ -14,13 +18,13 @@ public class PracticalTest01MainActivity extends AppCompatActivity {
     Button left_button, right_button, secondary_activity_button;
     TextView left_text, right_text;
     Intent secondary;
+    Boolean service_status = false;
     final private static int ANOTHER_ACTIVITY_REQUEST_CODE = 2017;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_practical_test01_main);
-
         left_button = findViewById(R.id.left_button);
         right_button = findViewById(R.id.right_button);
         secondary_activity_button = findViewById(R.id.secondary_activity_button);
@@ -35,6 +39,14 @@ public class PracticalTest01MainActivity extends AppCompatActivity {
                 Integer number = Integer.parseInt(left_text.getText().toString());
                 number++;
                 left_text.setText(number.toString());
+                if (Integer.valueOf(right_text.getText().toString()) + Integer.valueOf(left_text.getText().toString()) >=
+                        Constants.THRESHHOLD && !service_status) {
+                    Intent intent = new Intent(getApplicationContext(), PracticalTest01Service.class);
+                    intent.putExtra("left", Integer.valueOf(left_text.getText().toString()));
+                    intent.putExtra("right", Integer.valueOf(right_text.getText().toString()));
+                    getApplicationContext().startService(intent);
+                    service_status = true;
+                }
             }
         });
 
@@ -44,6 +56,14 @@ public class PracticalTest01MainActivity extends AppCompatActivity {
                 Integer number = Integer.parseInt(right_text.getText().toString());
                 number++;
                 right_text.setText(number.toString());
+                if (Integer.valueOf(right_text.getText().toString()) + Integer.valueOf(left_text.getText().toString()) >=
+                        Constants.THRESHHOLD && !service_status) {
+                    Intent intent = new Intent(getApplicationContext(), PracticalTest01Service.class);
+                    intent.putExtra("left", left_text.getText().toString());
+                    intent.putExtra("right", right_text.getText().toString());
+                    getApplicationContext().startService(intent);
+                    service_status = true;
+                }
             }
         });
 
@@ -61,6 +81,14 @@ public class PracticalTest01MainActivity extends AppCompatActivity {
             }
         });
 
+    }
+
+    private MessageBroadcastReceiver messageBroadcastReceiver = new MessageBroadcastReceiver();
+    private class MessageBroadcastReceiver extends BroadcastReceiver {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            Log.d("broadcast", intent.getStringExtra("data"));
+        }
     }
 
     protected void onSaveInstanceState(Bundle savedInstance) {
@@ -86,5 +114,11 @@ public class PracticalTest01MainActivity extends AppCompatActivity {
                 break;
         }
 
+    }
+
+    public void onDestroy() {
+        Intent intent = new Intent(this, PracticalTest01Service.class);
+        stopService(intent);
+        super.onDestroy();
     }
 }
